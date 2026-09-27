@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <title>Sara AI Voice Assistant</title>
+
+<style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+:root {
+      color-scheme: dark;
+    }
+
+body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: radial-gradient(circle at center, #111827, #030712);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 20px;
+    }
+
+button, input, select {
+      font: inherit;
+    }
+
+button, select {
+      cursor: pointer;
+    }
+
+button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    a:focus-visible {
+      outline: 3px solid #38bdf8;
+      outline-offset: 4px;
+    }
+
+.top-bar,
+    .toolbar,
+    .transcript-box,
+    .text-form,
+    .controls,
+    .hint {
+      width: 100%;
+      max-width: 480px;
+    }
+
+.top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+    }
+
+.brand {
+      font-weight: bold;
+      letter-spacing: 1px;
+      font-size: 15px;
+    }
+
+.api-btn, .small-btn, select {
+      background: rgba(255, 255, 255, .08);
+      border: 1px solid rgba(255, 255, 255, .2);
+      color: #93c5fd;
+      padding: 9px 13px;
+      border-radius: 20px;
+      font-size: 13px;
+    }
+
+.api-btn:hover, .small-btn:hover {
+      background: rgba(255, 255, 255, .15);
+    }
+
+select option {
+      background: #0f172a;
+      color: white;
+    }
+
+.toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+.sound-toggle {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: #cbd5e1;
+      font-size: 13px;
+    }
+
+.assistant-container {
+      display: flex;
+      flex: 1;
+      min-height: 245px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+.orb {
+      width: 170px;
+      height: 170px;
+      border: none;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        #f43f5e 0%,
+        #a855f7 50%,
+        #3b82f6 100%
+      );
+      box-shadow:
+        0 0 50px rgba(168, 85, 247, .6),
+        inset 0 0 30px rgba(255, 255, 255, .8);
+      animation: float 4s ease-in-out infinite;
+    }
+
+@keyframes float {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-10px) scale(1.02); }
+    }
+
+.listening .orb {
+      animation: pulse 1.2s infinite alternate;
+      box-shadow:
+        0 0 80px rgba(244, 63, 94, .9),
+        inset 0 0 40px rgba(255, 255, 255, .9);
+    }
+
+@keyframes pulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.12); }
+    }
+
+.speaking .orb {
+      animation: speakWave .8s infinite alternate;
+      box-shadow:
+        0 0 70px rgba(59, 130, 246, .9),
+        inset 0 0 40px rgba(255, 255, 255, .9);
+    }
+
+@keyframes speakWave {
+      from { transform: scale(.95); }
+      to { transform: scale(1.08); filter: hue-rotate(70deg); }
+    }
+
+.thinking .orb {
+      animation: pulse 1.5s infinite alternate;
+      filter: hue-rotate(35deg);
+    }
+
+.status {
+      margin-top: 25px;
+      font-size: 15px;
+      color: #94a3b8;
+      text-align: center;
+      max-width: 480px;
+      line-height: 1.5;
+    }
+
+.transcript-box {
+      background: rgba(255, 255, 255, .05);
+      border: 1px solid rgba(255, 255, 255, .1);
+      backdrop-filter: blur(16px);
+      border-radius: 16px;
+      padding: 16px;
+      height: 190px;
+      overflow-y: auto;
+      font-size: 14px;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+.message {
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+    }
+
+.user-text { color: #38bdf8; }
+    .ai-text { color: #f1f5f9; }
+    .notice { color: #fcd34d; }
+
+.open-link {
+      display: inline-block;
+      margin-top: 8px;
+      color: #7dd3fc;
+      padding: 7px 12px;
+      border: 1px solid #38bdf8;
+      border-radius: 8px;
+      text-decoration: none;
+    }
+
+.text-form {
+      display: flex;
+      gap: 8px;
+    }
+
+.text-form input {
+      flex: 1;
+      min-width: 0;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #fff;
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+.send-btn {
+      border: none;
+      border-radius: 12px;
+      padding: 10px 17px;
+      background: #38bdf8;
+      color: #082f49;
+      font-weight: bold;
+    }
+
+.controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+.mic-btn {
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      color: white;
+      border: none;
+      padding: 15px 25px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: bold;
+      box-shadow: 0 4px 20px rgba(168, 85, 247, .4);
+      transition: transform .2s;
+    }
+
+.mic-btn:not(:disabled):hover {
+      transform: translateY(-2px);
+    }
+
+.hint {
+      color: #94a3b8;
+      font-size: 12px;
+      line-height: 1.6;
+      text-align: center;
+      padding-bottom: 10px;
+    }
+
+dialog {
+      position: fixed;
+      inset: 0;
+      margin: auto;
+      width: min(92vw, 440px);
+      max-height: 90dvh;
+      overflow-y: auto;
+      background: #1e293b;
+      color: white;
+      border: 1px solid #334155;
+      padding: 24px;
+      border-radius: 16px;
+    }
+
+dialog::backdrop {
+      background: rgba(0, 0, 0, .75);
+      backdrop-filter: blur(8px);
+    }
+
+.modal-content > label {
+      display: block;
+      margin-top: 16px;
+      font-size: 14px;
+    }
+
+.modal-content input[type="password"],
+    .modal-content input[type="text"],
+    .modal-content select {
+      width: 100%;
+      padding: 12px;
+      margin-top: 7px;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background: #0f172a;
+      color: #fff;
+    }
+
+.modal-note {
+      color: #cbd5e1;
+      font-size: 12px;
+      line-height: 1.6;
+      margin-top: 10px;
+    }
+
+.modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+.modal-buttons button {
+      padding: 9px 15px;
+      border-radius: 7px;
+      border: none;
+      font-weight: bold;
+    }
+
+.save-btn { background: #38bdf8; color: #082f49; }
+    .cancel-btn { background: #475569; color: #fff; }
+    .delete-btn { background: #7f1d1d; color: white; }
+
+#settingsStatus {
+      color: #fcd34d;
+      min-height: 20px;
+    }
+
+@media (max-height: 720px) {
+      .assistant-container { min-height: 195px; }
+      .orb { width: 130px; height: 130px; }
+      .transcript-box { height: 155px; }
+    }
+
+@media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="top-bar">
+    <span class="brand">SARA AI ASSISTANT</span>
+    <button class="api-btn" id="settingsBtn" type="button">
+      ⚙️ API Settings
+    </button>
+  </header>
+
+<div class="toolbar">
+    <select id="languageSelect" aria-label="Recognition language">
+      <option value="hi-IN">Hindi / Hinglish</option>
+      <option value="en-IN">English India</option>
+      <option value="en-US">English US</option>
+    </select>
+
+<label class="sound-toggle">
+      <input id="soundEnabled" type="checkbox" checked>
+      Voice reply
+    </label>
+
+<button class="small-btn" id="clearBtn" type="button">
+      Clear chat
+    </button>
+  </div>
+
+<main class="assistant-container" id="assistantContainer">
+    <button
+      class="orb"
+      id="orbBtn"
+      type="button"
+      aria-label="Start or stop microphone"
+    ></button>
+
+<div class="status" id="statusText" role="status" aria-live="polite">
+      Mujhe sunne ke liye Mic dabayein
+    </div>
+  </main>
+
+<section
+    class="transcript-box"
+    id="chatBox"
+    role="log"
+    aria-label="Conversation"
+    aria-live="polite"
+    aria-relevant="additions"
+  ></section>
+
+<form class="text-form" id="textForm">
+    <input
+      id="textInput"
+      type="text"
+      maxlength="2000"
+      placeholder="Ya yahan type karein..."
+      aria-label="Your message"
+      autocomplete="off"
+      required
+    >
+    <button class="send-btn" id="sendBtn" type="submit">Send</button>
+  </form>
+
+<div class="controls">
+    <button class="mic-btn" id="micBtn" type="button">
+      🎙️ Bolna Shuru Karein
+    </button>
+    <button class="small-btn" id="stopBtn" type="button" disabled>
+      ⏹ Stop
+    </button>
+  </div>
+
+<p class="hint" id="browserHint">
+    Mic ke liye HTTPS ya localhost use karein aur microphone permission allow karein.
+    Voice recognition browser ke speech service ko audio bhej sakti hai.
+  </p>
+
+<dialog id="apiModal" aria-labelledby="settingsTitle">
+    <form class="modal-content" id="settingsForm">
+      <h3 id="settingsTitle">Gemini API Settings</h3>
+
+<p class="modal-note">
+        Basic commands bina key ke chalenge. AI questions Google ko bheje jaate hain.
+        Yeh single-file version personal testing ke liye hai.
+        Public deployment mein API key backend par rakhein.
+      </p>
+
+<label for="apiKeyInput">Gemini API key</label>
+      <input
+        type="password"
+        id="apiKeyInput"
+        placeholder="Apni API key yahan paste karein"
+        autocomplete="off"
+        spellcheck="false"
+      >
+
+<label for="modelInput">Model ID</label>
+      <input
+        type="text"
+        id="modelInput"
+        placeholder="Available models load karke select karein"
+        autocomplete="off"
+        spellcheck="false"
+      >
+
+<div style="margin-top: 12px;">
+        <button class="small-btn" id="loadModelsBtn" type="button">
+          Available models load karein
+        </button>
+      </div>
+
+<label for="modelSelect">Available text-model candidates</label>
+      <select id="modelSelect">
+        <option value="">Pehle models load karein</option>
+      </select>
+
+<p class="modal-note">
+        Model listing usage quota ya free access guarantee nahi karti.
+        Apne project ki pricing aur quota check karein.
+      </p>
+
+<label>
+        <input id="rememberKey" type="checkbox">
+        Is tab ke session mein key yaad rakhein
+      </label>
+
+<p class="modal-note">
+        Default: key sirf memory mein rahegi.
+        Session storage bhi secret vault nahi hai.
+      </p>
+
+<p class="modal-note" id="settingsStatus" role="status"></p>
+
+<div class="modal-buttons">
+        <button class="delete-btn" id="removeKeyBtn" type="button">
+          Remove key
+        </button>
+        <button class="cancel-btn" id="cancelSettingsBtn" type="button">
+          Cancel
+        </button>
+        <button class="save-btn" type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+<script>
+    "use strict";
+
+const $ = id => document.getElementById(id);
+
+const statusText = $("statusText");
+    const chatBox = $("chatBox");
+    const assistantContainer = $("assistantContainer");
+    const micBtn = $("micBtn");
+    const orbBtn = $("orbBtn");
+    const stopBtn = $("stopBtn");
+    const textInput = $("textInput");
+    const sendBtn = $("sendBtn");
+    const languageSelect = $("languageSelect");
+    const soundEnabled = $("soundEnabled");
+    const apiModal = $("apiModal");
+    const apiKeyInput = $("apiKeyInput");
+    const modelInput = $("modelInput");
+    const modelSelect = $("modelSelect");
+    const rememberKey = $("rememberKey");
+    const settingsStatus = $("settingsStatus");
+    const loadModelsBtn = $("loadModelsBtn");
+
+const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+const synth = window.speechSynthesis;
+    const API_BASE = "https://generativelanguage.googleapis.com/v1beta";
+    const STORAGE_KEY = "SARA_GEMINI_SESSION";
+
+let apiKey = "";
+    let modelId = "";
+    let mode = "idle";
+    let recognition = null;
+    let recognitionTimer = null;
+    let requestController = null;
+    let modelsController = null;
+    let turnId = 0;
+    let speechId = 0;
+    let speechTimer = null;
+    let currentUtterance = null;
+    let voices = [];
+
+// Safely restore optional tab-session settings.
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null");
+      if (saved && typeof saved.key === "string") {
+        apiKey = saved.key;
+        modelId = typeof saved.model === "string" ? saved.model : "";
+        rememberKey.checked = true;
+      }
+    } catch {
+      // Storage can be disabled by browser privacy settings.
+    }
+
+// Migration: remove the old persistent key without silently reusing it.
+    try {
+      localStorage.removeItem("GEMINI_API_KEY");
+    } catch {
+      // The app remains usable when localStorage is unavailable.
+    }
+
+function setMode(next, message = "") {
+      mode = next;
+
+assistantContainer.classList.remove(
+        "listening", "speaking", "thinking"
+      );
+
+if (["listening", "speaking", "thinking"].includes(next)) {
+        assistantContainer.classList.add(next);
+      }
+
+const recording = ["starting", "listening", "stopping"].includes(next);
+
+micBtn.textContent = recording
+        ? "🛑 Mic Rokna"
+        : "🎙️ Bolna Shuru Karein";
+
+const microphoneUnavailable =
+        !SpeechRecognition || !window.isSecureContext;
+
+micBtn.disabled =
+        microphoneUnavailable ||
+        ["starting", "stopping", "thinking"].includes(next);
+
+orbBtn.disabled = micBtn.disabled;
+
+sendBtn.disabled = recording || next === "thinking";
+      textInput.disabled = sendBtn.disabled;
+      languageSelect.disabled = recording;
+      stopBtn.disabled = next === "idle" || next === "error";
+
+if (message) statusText.textContent = message;
+    }
+
+// No user or model-generated text is inserted as HTML.
+    function createMessage(text, sender = "ai") {
+      const row = document.createElement("div");
+      row.className =
+        "message " +
+        (sender === "user"
+          ? "user-text"
+          : sender === "notice" ? "notice" : "ai-text");
+
+const label = document.createElement("strong");
+      label.textContent =
+        sender === "user" ? "Aap: " : sender === "notice" ? "Info: " : "Sara: ";
+
+const content = document.createElement("span");
+      content.textContent = String(text);
+
+row.append(label, content);
+      return row;
+    }
+
+function displayMessage(text, sender = "ai") {
+      const row = createMessage(text, sender);
+      chatBox.appendChild(row);
+
+// Prevent unbounded DOM growth in long sessions.
+      while (chatBox.children.length > 150) {
+        chatBox.firstElementChild.remove();
+      }
+
+chatBox.scrollTop = chatBox.scrollHeight;
+      return row;
+    }
+
+function loadVoices() {
+      voices = synth ? synth.getVoices() : [];
+    }
+
+if (synth) {
+      loadVoices();
+      synth.addEventListener("voiceschanged", loadVoices);
+    } else {
+      soundEnabled.checked = false;
+      soundEnabled.disabled = true;
+    }
+
+function chooseVoice(text) {
+      const requestedLanguage = /[\u0900-\u097f]/.test(text)
+        ? "hi-IN"
+        : languageSelect.value;
+
+const prefix = requestedLanguage.split("-")[0];
+
+const candidates = voices.filter(voice =>
+        voice.lang.toLowerCase().startsWith(prefix.toLowerCase())
+      );
+
+// Voice names are device-dependent; gender cannot be guaranteed.
+      const preferredName = /swara|zira|samantha|female|google हिन्दी/i;
+
+return candidates.find(voice => preferredName.test(voice.name)) ||
+        candidates.find(voice =>
+          voice.lang.toLowerCase() === requestedLanguage.toLowerCase()
+        ) ||
+        candidates[0] ||
+        voices.find(voice => voice.default) ||
+        voices[0] ||
+        null;
+    }
+
+function cancelSpeech() {
+      speechId++;
+      clearTimeout(speechTimer);
+      speechTimer = null;
+      currentUtterance = null;
+      if (synth) synth.cancel();
+    }
+
+function stopAll(message = "Rok diya. Dobara bol sakte hain.") {
+      turnId++;
+
+const activeRecognition = recognition;
+      recognition = null;
+      clearTimeout(recognitionTimer);
+      recognitionTimer = null;
+
+if (activeRecognition) {
+        try {
+          activeRecognition.abort();
+        } catch {
+          // Already stopped.
+        }
+      }
+
+if (requestController) {
+        requestController.abort();
+        requestController = null;
+      }
+
+cancelSpeech();
+      setMode("idle", message);
+    }
+
+function speak(text, owner = turnId) {
+      cancelSpeech();
+
+if (!synth || !soundEnabled.checked) {
+        setMode("idle", "Jawab neeche diya hai.");
+        return;
+      }
+
+const thisSpeech = speechId;
+      const utterance = new SpeechSynthesisUtterance(String(text));
+      currentUtterance = utterance;
+
+const voice = chooseVoice(String(text));
+      utterance.lang = voice
+        ? voice.lang
+        : /[\u0900-\u097f]/.test(text) ? "hi-IN" : languageSelect.value;
+
+if (voice) utterance.voice = voice;
+      utterance.pitch = 1.05;
+      utterance.rate = 1;
+
+const isCurrent = () =>
+        owner === turnId && thisSpeech === speechId;
+
+const finish = message => {
+        if (!isCurrent()) return;
+        clearTimeout(speechTimer);
+        speechTimer = null;
+        currentUtterance = null;
+        setMode("idle", message);
+      };
+
+utterance.onstart = () => {
+        if (isCurrent()) setMode("speaking", "Bol rahi hoon...");
+      };
+
+utterance.onend = () => finish("Sunne ke liye taiyar hoon.");
+
+utterance.onerror = () =>
+        finish("Voice playback nahi hua. Jawab chat mein padh sakte hain.");
+
+setMode("speaking", "Voice reply taiyar hai...");
+
+// Some browsers omit speech callbacks. Avoid a permanently stuck UI.
+      speechTimer = setTimeout(() => {
+        if (!isCurrent()) return;
+        cancelSpeech();
+        setMode("idle", "Voice playback ruka. Jawab chat mein hai.");
+      }, 90000);
+
+try {
+        synth.speak(utterance);
+      } catch {
+        finish("Voice playback available nahi hai. Jawab chat mein hai.");
+      }
+    }
+
+function reply(text, owner = turnId) {
+      if (owner !== turnId) return;
+      displayMessage(text);
+      speak(text, owner);
+    }
+
+function speechErrorMessage(code) {
+      const messages = {
+        "not-allowed": "Microphone permission blocked hai. Browser settings check karein.",
+        "service-not-allowed": "Browser ki speech service allowed nahi hai.",
+        "audio-capture": "Microphone nahi mil raha. Device aur permission check karein.",
+        "no-speech": "Awaaz nahi mili. Mic dabakar dobara boliye.",
+        "network": "Speech recognition network error. Internet check karein.",
+        "language-not-supported": "Selected speech language supported nahi hai.",
+        "aborted": "Microphone rok diya gaya."
+      };
+
+return messages[code] || "Speech recognition error. Type karke bhi bhej sakte hain.";
+    }
+
+function toggleListening() {
+      if (!SpeechRecognition) {
+        setMode("error", "Is browser mein voice recognition nahi hai. Text input use karein.");
+        return;
+      }
+
+if (!window.isSecureContext) {
+        setMode("error", "Mic ke liye page ko HTTPS ya localhost par kholein.");
+        return;
+      }
+
+if (mode === "thinking") return;
+
+if (recognition) {
+        setMode("stopping", "Mic rok rahi hoon...");
+        try {
+          recognition.stop();
+        } catch {
+          stopAll();
+        }
+        return;
+      }
+
+stopAll("Mic start ho raha hai...");
+
+const owner = turnId;
+      let instance;
+
+try {
+        instance = new SpeechRecognition();
+      } catch {
+        setMode("error", "Speech service start nahi ho paayi. Text input use karein.");
+        return;
+      }
+
+recognition = instance;
+      instance.lang = languageSelect.value;
+      instance.continuous = false;
+      instance.interimResults = true;
+      instance.maxAlternatives = 1;
+
+let finalText = "";
+
+const isCurrent = () =>
+        recognition === instance && owner === turnId;
+
+instance.onstart = () => {
+        if (isCurrent()) {
+          setMode("listening", "Main sun rahi hoon, boliye...");
+        }
+      };
+
+instance.onresult = event => {
+        if (!isCurrent()) return;
+
+let interim = "";
+
+for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          const text = result[0]?.transcript || "";
+
+if (result.isFinal) {
+            finalText += " " + text;
+          } else {
+            interim += " " + text;
+          }
+        }
+
+if (interim.trim()) {
+          statusText.textContent = "Sun rahi hoon: " + interim.trim();
+        }
+
+if (finalText.trim()) {
+          setMode("stopping", "Command mil gaya...");
+          try {
+            instance.stop();
+          } catch {
+            // onend or the watchdog will finish this session.
+          }
+        }
+      };
+
+instance.onerror = event => {
+        if (!isCurrent()) return;
+
+recognition = null;
+        clearTimeout(recognitionTimer);
+        recognitionTimer = null;
+
+try {
+          instance.abort();
+        } catch {
+          // Already stopped.
+        }
+
+setMode("error", speechErrorMessage(event.error));
+      };
+
+instance.onend = () => {
+        if (!isCurrent()) return;
+
+recognition = null;
+        clearTimeout(recognitionTimer);
+        recognitionTimer = null;
+
+if (finalText.trim()) {
+          void handleCommand(finalText.trim());
+        } else {
+          setMode("idle", "Kuch sunai nahi diya. Dobara boliye ya type karein.");
+        }
+      };
+
+setMode("starting", "Mic permission / speech service ka intezar...");
+
+recognitionTimer = setTimeout(() => {
+        if (!isCurrent()) return;
+
+const captured = finalText.trim();
+        stopAll("Mic timeout. Dobara koshish karein.");
+
+if (captured) void handleCommand(captured);
+      }, 25000);
+
+try {
+        instance.start();
+      } catch {
+        stopAll();
+        setMode("error", "Mic start nahi hua. Permission check karke dobara try karein.");
+      }
+    }
+
+function normalize(text) {
+      return String(text)
+        .normalize("NFKC")
+        .toLowerCase()
+        .replace(/[^\p{L}\p{M}\p{N}\s]/gu, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+function hasPhrase(text, phrases) {
+      const padded = " " + text + " ";
+      return phrases.some(phrase => padded.includes(" " + phrase + " "));
+    }
+
+function removePhrases(text, phrases) {
+      let result = " " + text + " ";
+
+for (const phrase of [...phrases].sort((a, b) => b.length - a.length)) {
+        const needle = " " + phrase + " ";
+        while (result.includes(needle)) {
+          result = result.replace(needle, " ");
+        }
+      }
+
+return result.replace(/\s+/g, " ").trim();
+    }
+
+const APPS = [
+      {
+        name: "YouTube",
+        aliases: ["youtube", "you tube", "यूट्यूब", "यूटूब", "यू ट्यूब"],
+        url: "https://www.youtube.com/"
+      },
+      {
+        name: "Google",
+        aliases: ["google", "गूगल"],
+        url: "https://www.google.com/"
+      },
+      {
+        name: "Instagram",
+        aliases: ["instagram", "इंस्टाग्राम", "इन्स्टाग्राम"],
+        url: "https://www.instagram.com/"
+      },
+      {
+        name: "WhatsApp Web",
+        aliases: ["whatsapp", "whats app", "व्हाट्सएप", "व्हाट्सऐप", "वाट्सएप"],
+        url: "https://web.whatsapp.com/"
+      }
+    ];
+
+const OPEN_WORDS = [
+      "open", "kholo", "khol", "kholiye",
+      "खोलो", "खोल", "खोलिए", "खोलें", "ओपन"
+    ];
+
+const PLAY_WORDS = [
+      "bajao", "bajaye", "bajaiye", "chalao", "sunao",
+      "बजाओ", "बजा", "बजाइए", "चलाओ", "चला", "सुनाओ"
+    ];
+
+const MUSIC_WORDS = [
+      "gana", "gaana", "gane", "song", "songs", "music",
+      "गाना", "गाने", "गीत", "म्यूजिक", "सॉन्ग", "संगीत"
+    ];
+
+const SEARCH_WORDS = [
+      "search", "find", "dhundho", "dhoondo",
+      "खोजो", "खोजें", "ढूंढो", "ढूँढो", "सर्च"
+    ];
+
+function classifyCommand(raw) {
+      const text = normalize(raw);
+
+if (!text) return { type: "empty" };
+
+if ([
+        "stop", "ruk jao", "chup", "बस", "रुको", "चुप",
+        "बंद करो", "stop speaking"
+      ].includes(text)) {
+        return { type: "stop" };
+      }
+
+// Explicit app-opening commands take precedence over music matching.
+      const app = APPS.find(item => hasPhrase(text, item.aliases));
+
+if (app && (
+        hasPhrase(text, OPEN_WORDS) ||
+        app.aliases.includes(text)
+      )) {
+        return { type: "open", name: app.name, url: app.url };
+      }
+
+const englishPlay = /^(?:(?:please|sara)\s+)*play(?:\s|$)/.test(text);
+      const musicSearch =
+        hasPhrase(text, MUSIC_WORDS) &&
+        hasPhrase(text, [...SEARCH_WORDS, "listen", "suno", "सुनना", "सुनो"]);
+
+if (englishPlay || hasPhrase(text, PLAY_WORDS) || musicSearch) {
+        const query = removePhrases(text, [
+          ...PLAY_WORDS,
+          ...MUSIC_WORDS,
+          ...SEARCH_WORDS,
+          "play", "please", "प्लीज", "कृपया",
+          "mujhe", "मुझे", "sara", "सारा",
+          "youtube", "यूट्यूब", "पर", "pe", "on",
+          "listen", "suno", "सुनो"
+        ]) || "popular songs";
+
+return {
+          type: "music",
+          query,
+          url: "https://www.youtube.com/results?search_query=" +
+            encodeURIComponent(query)
+        };
+      }
+
+if (hasPhrase(text, [
+        "samay", "समय", "time", "टाइम", "kitne baje", "कितने बजे"
+      ]) && !hasPhrase(text, ["time travel", "टाइम ट्रैवल"])) {
+        return { type: "time" };
+      }
+
+if (hasPhrase(text, [
+        "date", "तारीख", "तिथि", "tarikh", "tareekh",
+        "aaj ka din", "आज कौन सा दिन", "what day is it"
+      ])) {
+        return { type: "date" };
+      }
+
+if (hasPhrase(text, SEARCH_WORDS)) {
+        const query = removePhrases(text, [
+          ...SEARCH_WORDS,
+          "google", "गूगल", "पर", "pe", "on",
+          "please", "कृपया", "karo", "करो", "for"
+        ]);
+
+return query
+          ? {
+              type: "search",
+              query,
+              url: "https://www.google.com/search?q=" +
+                encodeURIComponent(query)
+            }
+          : { type: "search-empty" };
+      }
+
+if (/^(hi|hello|hey|namaste|नमस्ते|हेलो)( sara| सारा)?$/.test(text)) {
+        return { type: "hello" };
+      }
+
+if ([
+        "help", "madad", "मदद",
+        "tum kya kar sakti ho", "तुम क्या कर सकती हो"
+      ].includes(text)) {
+        return { type: "help" };
+      }
+
+return { type: "ai" };
+    }
+
+function respondAndOpen(message, url, owner = turnId) {
+      if (owner !== turnId) return;
+
+const parsed = new URL(url);
+      const allowedHosts = new Set([
+        "www.youtube.com",
+        "www.google.com",
+        "www.instagram.com",
+        "web.whatsapp.com"
+      ]);
+
+if (parsed.protocol !== "https:" || !allowedHosts.has(parsed.hostname)) {
+        throw new Error("Unsafe navigation blocked.");
+      }
+
+const row = displayMessage(
+        message + " Agar naya tab nahi khula, neeche link par tap karein."
+      );
+
+const link = document.createElement("a");
+      link.className = "open-link";
+      link.href = parsed.href;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "↗ Kholne ke liye tap karein";
+
+row.append(document.createElement("br"), link);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+// Voice callbacks may not have user activation.
+      // The visible link remains usable when popups are blocked.
+      try {
+        window.open(parsed.href, "_blank", "noopener,noreferrer");
+      } catch {
+        // No popup bypass: user can click the explicit link.
+      }
+
+speak(message, owner);
+    }
+
+async function handleCommand(raw) {
+      const text = String(raw).trim();
+      if (!text) return;
+
+if (text.length > 2000) {
+        displayMessage("Message ko 2000 characters se chhota rakhein.", "notice");
+        return;
+      }
+
+stopAll("Command process ho raha hai...");
+      const owner = turnId;
+      displayMessage(text, "user");
+
+try {
+        const intent = classifyCommand(text);
+
+switch (intent.type) {
+          case "stop":
+            setMode("idle", "Rok diya.");
+            return;
+
+case "open":
+            respondAndOpen(
+              intent.name + " ki website kholne ka link taiyar hai.",
+              intent.url,
+              owner
+            );
+            return;
+
+case "music":
+            respondAndOpen(
+              intent.query +
+                " ke YouTube results khol rahi hoon. Gaana select karke Play dabayein.",
+              intent.url,
+              owner
+            );
+            return;
+
+case "search":
+            respondAndOpen(
+              intent.query + " ke Google results kholne ka link taiyar hai.",
+              intent.url,
+              owner
+            );
+            return;
+
+case "search-empty":
+            reply("Kya search karna hai? Jaise: Google par Taj Mahal search karo.", owner);
+            return;
+
+case "time":
+            reply(
+              "Abhi ka samay hai " +
+              new Date().toLocaleTimeString(languageSelect.value, {
+                hour: "2-digit",
+                minute: "2-digit"
+              }),
+              owner
+            );
+            return;
+
+case "date":
+            reply(
+              "Aaj " +
+              new Date().toLocaleDateString(languageSelect.value, {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric"
+              }),
+              owner
+            );
+            return;
+
+case "hello":
+            reply("Namaste! Main Sara hoon. Bataiye, kya madad karoon?", owner);
+            return;
+
+case "help":
+            reply(
+              "Aap keh sakte hain: YouTube kholo, Kesariya gaana bajao, " +
+              "samay batao, aaj ki tarikh batao, ya Google par kuch search karo. " +
+              "General AI sawalon ke liye API Settings mein key aur model set karein.",
+              owner
+            );
+            return;
+
+default:
+            if (!apiKey) {
+              reply(
+                "Is sawal ke AI jawab ke liye API Settings mein Gemini key aur model set karein. " +
+                "Basic commands bina key ke chalenge.",
+                owner
+              );
+              return;
+            }
+
+if (!modelId) {
+              reply("API Settings mein available models load karke ek model select karein.", owner);
+              return;
+            }
+
+setMode("thinking", "Soch rahi hoon...");
+            const result = await askGemini(text);
+
+if (owner !== turnId) return;
+
+reply(result.text, owner);
+
+if (result.truncated) {
+              displayMessage(
+                "Jawab output limit ki wajah se adhura ho sakta hai.",
+                "notice"
+              );
+            }
+        }
+      } catch (error) {
+        if (owner !== turnId) return;
+
+const message = error instanceof Error
+          ? error.message
+          : "Unexpected error. Dobara koshish karein.";
+
+displayMessage(message, "notice");
+        setMode("error", message);
+      }
+    }
+
+function normalizeModel(value) {
+      return String(value).trim().replace(/^models\//, "");
+    }
+
+function isValidModel(value) {
+      return /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,119}$/.test(value);
+    }
+
+function apiErrorMessage(status) {
+      if (status === 400) {
+        return "API request reject hui. Model ID, key aur model support check karein.";
+      }
+      if (status === 401 || status === 403) {
+        return "API key ya project access allowed nahi hai. Key restrictions aur project access check karein.";
+      }
+      if (status === 404) {
+        return "Selected model nahi mila. API Settings se available models reload karein.";
+      }
+      if (status === 429) {
+        return "Quota ya rate limit hit hui. AI Studio mein quota/billing check karein aur baad mein try karein.";
+      }
+      if (status >= 500) {
+        return "Gemini service error. Thodi der baad dobara try karein.";
+      }
+      return "Gemini request fail hui. HTTP status: " + status;
+    }
+
+async function fetchGemini(path, key, signal, body) {
+      const headers = { "x-goog-api-key": key };
+      if (body) headers["Content-Type"] = "application/json";
+
+let response;
+
+try {
+        response = await fetch(API_BASE + path, {
+          method: body ? "POST" : "GET",
+          headers,
+          body: body ? JSON.stringify(body) : undefined,
+          signal,
+          credentials: "omit",
+          cache: "no-store"
+        });
+      } catch (error) {
+        if (signal.aborted) throw error;
+        throw new Error(
+          "Network/browser request fail hui. Internet, key restrictions aur browser access check karein."
+        );
+      }
+
+if (!response.ok) {
+        // Avoid displaying raw provider errors that may contain sensitive values.
+        throw new Error(apiErrorMessage(response.status));
+      }
+
+try {
+        return await response.json();
+      } catch (error) {
+        if (signal.aborted) throw error;
+        throw new Error("API se valid JSON response nahi mila.");
+      }
+    }
+
+function extractGeminiResponse(data) {
+      if (data?.promptFeedback?.blockReason) {
+        throw new Error("Is request ka jawab provider ne block kiya. Sawal ko alag tarah poochhein.");
+      }
+
+const candidate = data?.candidates?.[0];
+
+if ([
+        "SAFETY", "RECITATION", "BLOCKLIST", "PROHIBITED_CONTENT", "SPII"
+      ].includes(candidate?.finishReason)) {
+        throw new Error("Provider ne yeh response return nahi kiya. Sawal badalkar try karein.");
+      }
+
+const parts = candidate?.content?.parts;
+
+const text = Array.isArray(parts)
+        ? parts
+            .filter(part =>
+              part &&
+              part.thought !== true &&
+              typeof part.text === "string"
+            )
+            .map(part => part.text)
+            .join("\n")
+            .trim()
+        : "";
+
+if (!text) {
+        throw new Error(
+          "Model se readable text nahi mila. Sawal badlein ya doosra text model select karein."
+        );
+      }
+
+return {
+        text,
+        truncated: candidate?.finishReason === "MAX_TOKENS"
+      };
+    }
+
+async function askGemini(prompt) {
+      const selectedModel = normalizeModel(modelId);
+
+if (!isValidModel(selectedModel)) {
+        throw new Error("API Settings mein valid model ID dalein.");
+      }
+
+const controller = new AbortController();
+      requestController = controller;
+      let timedOut = false;
+
+const timer = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, 45000);
+
+try {
+        const data = await fetchGemini(
+          "/models/" + encodeURIComponent(selectedModel) + ":generateContent",
+          apiKey,
+          controller.signal,
+          {
+            systemInstruction: {
+              parts: [{
+                text:
+                  "Your name is Sara. You are a helpful voice assistant. " +
+                  "Reply briefly in natural Hindi or Hinglish matching the user, " +
+                  "normally in 2-3 sentences. Use plain text for speech. " +
+                  "Do not claim you opened apps, played media, or performed actions. " +
+                  "You have no device controls or live web access in this request."
+              }]
+            },
+            contents: [{
+              role: "user",
+              parts: [{ text: prompt }]
+            }],
+            generationConfig: {
+              maxOutputTokens: 2048
+            }
+          }
+        );
+
+return extractGeminiResponse(data);
+      } catch (error) {
+        if (timedOut) {
+          throw new Error("AI reply timeout ho gaya. Dobara try karein.");
+        }
+        throw error;
+      } finally {
+        clearTimeout(timer);
+        if (requestController === controller) {
+          requestController = null;
+        }
+      }
+    }
+
+async function loadAvailableModels() {
+      const key = apiKeyInput.value.trim();
+
+if (!key || /\s/.test(key)) {
+        settingsStatus.textContent = "Pehle valid API key dalein; spaces na hon.";
+        return;
+      }
+
+if (modelsController) modelsController.abort();
+
+const controller = new AbortController();
+      modelsController = controller;
+      const requestedKey = key;
+      let timedOut = false;
+
+loadModelsBtn.disabled = true;
+      settingsStatus.textContent = "Available models load ho rahe hain...";
+
+const timer = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, 30000);
+
+try {
+        const all = [];
+        let token = "";
+        const seenTokens = new Set();
+
+do {
+          const query = new URLSearchParams({ pageSize: "100" });
+          if (token) query.set("pageToken", token);
+
+const data = await fetchGemini(
+            "/models?" + query.toString(),
+            key,
+            controller.signal
+          );
+
+if (!Array.isArray(data.models)) {
+            throw new Error("Model list ka response expected format mein nahi hai.");
+          }
+
+all.push(...data.models);
+          token = data.nextPageToken || "";
+
+if (token) {
+            if (seenTokens.has(token) || seenTokens.size >= 20) {
+              throw new Error("Model listing complete nahi hui. Baad mein retry karein.");
+            }
+            seenTokens.add(token);
+          }
+        } while (token);
+
+if (apiKeyInput.value.trim() !== requestedKey) {
+          throw new Error("API key badal gayi hai. Models dobara load karein.");
+        }
+
+const candidates = all.filter(model =>
+          typeof model.name === "string" &&
+          Array.isArray(model.supportedGenerationMethods) &&
+          model.supportedGenerationMethods.includes("generateContent") &&
+          /^models\/gemini-/i.test(model.name) &&
+          !/image|audio|tts|live|robotics|embedding/i.test(model.name)
+        );
+
+candidates.sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, { numeric: true })
+        );
+
+modelSelect.replaceChildren(new Option("Model select karein", ""));
+
+for (const model of candidates) {
+          const id = normalizeModel(model.name);
+          if (isValidModel(id)) {
+            modelSelect.add(new Option(id, id));
+          }
+        }
+
+if (!candidates.length) {
+          throw new Error(
+            "Matching text-model candidates nahi mile. Apna supported model ID manually dalein."
+          );
+        }
+
+settingsStatus.textContent =
+          candidates.length +
+          " model candidates mile. Model select karke Save dabayein.";
+      } catch (error) {
+        if (modelsController !== controller) return;
+
+settingsStatus.textContent = timedOut
+          ? "Model listing timeout. Dobara try karein."
+          : controller.signal.aborted
+            ? "Model loading cancel hui."
+            : error.message;
+      } finally {
+        clearTimeout(timer);
+
+if (modelsController === controller) {
+          modelsController = null;
+          loadModelsBtn.disabled = false;
+        }
+      }
+    }
+
+function openKeyModal() {
+      stopAll("Settings khuli hain.");
+      apiKeyInput.value = apiKey;
+      modelInput.value = modelId;
+      modelSelect.replaceChildren(new Option("Pehle models load karein", ""));
+      settingsStatus.textContent = "";
+      apiModal.showModal();
+      apiKeyInput.focus();
+    }
+
+function closeKeyModal() {
+      if (modelsController) modelsController.abort();
+      modelsController = null;
+      loadModelsBtn.disabled = false;
+
+apiKeyInput.value = "";
+      modelSelect.replaceChildren(new Option("Pehle models load karein", ""));
+
+if (apiModal.open) apiModal.close();
+    }
+
+function saveApiKey(event) {
+      event.preventDefault();
+
+const key = apiKeyInput.value.trim();
+      const model = normalizeModel(modelInput.value);
+
+if (key && /\s/.test(key)) {
+        settingsStatus.textContent = "API key mein spaces nahi hone chahiye.";
+        return;
+      }
+
+if (key && !isValidModel(model)) {
+        settingsStatus.textContent =
+          "Available models load karke select karein ya valid model ID dalein.";
+        return;
+      }
+
+apiKey = key;
+      modelId = model;
+      let storageNote = "";
+
+try {
+        sessionStorage.removeItem(STORAGE_KEY);
+
+if (rememberKey.checked && apiKey) {
+          sessionStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({ key: apiKey, model: modelId })
+          );
+        }
+      } catch {
+        storageNote = " Browser storage unavailable hai; key sirf memory mein rahegi.";
+      }
+
+closeKeyModal();
+
+displayMessage(
+        (apiKey
+          ? "Settings save hui. API access abhi verify nahi hua."
+          : "API key hata di. Basic commands available hain.") +
+        storageNote,
+        "notice"
+      );
+
+setMode("idle", "Sunne ke liye taiyar hoon.");
+    }
+
+function removeApiKey() {
+      apiKey = "";
+      modelId = "";
+      rememberKey.checked = false;
+
+try {
+        sessionStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem("GEMINI_API_KEY");
+      } catch {
+        // Memory copy is still removed.
+      }
+
+closeKeyModal();
+      displayMessage("API key hata di gayi.", "notice");
+      setMode("idle", "Basic commands available hain.");
+    }
+
+$("settingsBtn").addEventListener("click", openKeyModal);
+    $("cancelSettingsBtn").addEventListener("click", closeKeyModal);
+    $("settingsForm").addEventListener("submit", saveApiKey);
+    $("removeKeyBtn").addEventListener("click", removeApiKey);
+    loadModelsBtn.addEventListener("click", loadAvailableModels);
+
+modelSelect.addEventListener("change", () => {
+      if (modelSelect.value) modelInput.value = modelSelect.value;
+    });
+
+apiModal.addEventListener("cancel", event => {
+      event.preventDefault();
+      closeKeyModal();
+    });
+
+micBtn.addEventListener("click", toggleListening);
+    orbBtn.addEventListener("click", toggleListening);
+    stopBtn.addEventListener("click", () => stopAll());
+
+soundEnabled.addEventListener("change", () => {
+      if (!soundEnabled.checked) {
+        cancelSpeech();
+        if (mode === "speaking") setMode("idle", "Voice reply off hai.");
+      }
+    });
+
+$("textForm").addEventListener("submit", event => {
+      event.preventDefault();
+      if (sendBtn.disabled) return;
+
+const text = textInput.value.trim();
+      if (!text) return;
+
+textInput.value = "";
+      void handleCommand(text);
+    });
+
+$("clearBtn").addEventListener("click", () => {
+      stopAll("Chat clear kar di.");
+      chatBox.replaceChildren();
+      displayMessage("Namaste! Bataiye, kya madad karoon?");
+    });
+
+window.addEventListener("pagehide", () => {
+      stopAll();
+      if (modelsController) modelsController.abort();
+    });
+
+displayMessage(
+      "Namaste! Main Sara hoon. Mic dabakar boliye ya type karein. " +
+      "Jaise: “यूट्यूब खोलो”, “Kesariya gaana bajao”, ya “समय बताओ”."
+    );
+
+setMode("idle", "Mujhe sunne ke liye Mic dabayein.");
+
+if (!SpeechRecognition) {
+      $("browserHint").textContent =
+        "Is browser mein Speech Recognition available nahi hai. " +
+        "Text input use karein ya supported browser mein try karein.";
+    } else if (!window.isSecureContext) {
+      $("browserHint").textContent =
+        "Mic disabled: page ko HTTPS ya localhost par serve karein. " +
+        "Text commands abhi bhi use kar sakte hain.";
+    }
+
+if (!apiKey) {
+      displayMessage(
+        "Purane version ki localStorage key automatically reuse nahi hoti. " +
+        "AI answers ke liye Settings mein key aur model set karein.",
+        "notice"
+      );
+    }
+
+// Local regression tests:
+    // Browser DevTools Console mein runSaraTests() run karein.
+    // These tests do not call APIs, open tabs, or start the microphone.
+    function runSaraTests() {
+      let passed = 0;
+
+function assert(condition, name) {
+        if (!condition) throw new Error("FAIL: " + name);
+        passed++;
+      }
+
+const routes = [
+        ["open youtube", "open"],
+        ["google kholo", "open"],
+        ["instagram kholo", "open"],
+        ["open whatsapp", "open"],
+        ["यूट्यूब खोलो", "open"],
+        ["गूगल खोलो", "open"],
+        ["व्हाट्सएप खोलो", "open"],
+        ["play kesariya", "music"],
+        ["केसरिया गाना बजाओ", "music"],
+        ["गाना बजाओ", "music"],
+        ["kitne baje", "time"],
+        ["समय बताओ", "time"],
+        ["आज की तारीख बताओ", "date"],
+        ["Google par Taj Mahal search karo", "search"],
+        ["explain runtime errors", "ai"],
+        ["what is cosplay", "ai"],
+        ["what is music", "ai"],
+        ["namaste", "hello"],
+        ["help", "help"],
+        ["stop", "stop"],
+        ["", "empty"]
+      ];
+
+for (const [input, expected] of routes) {
+        assert(
+          classifyCommand(input).type === expected,
+          "Route: " + input
+        );
+      }
+
+const song = classifyCommand("केसरिया गाना बजाओ");
+      assert(song.query === "केसरिया", "Hindi song query");
+
+assert(
+        new URL(song.url).searchParams.get("search_query") === "केसरिया",
+        "Encoded song URL"
+      );
+
+const unsafe = '<img src=x onerror="alert(1)">';
+      const row = createMessage(unsafe, "ai");
+
+assert(row.querySelector("img") === null, "No HTML execution");
+      assert(row.textContent.includes(unsafe), "Untrusted text preserved");
+
+const result = extractGeminiResponse({
+        candidates: [{
+          finishReason: "STOP",
+          content: {
+            parts: [
+              { text: "not public", thought: true },
+              { text: "Namaste!" }
+            ]
+          }
+        }]
+      });
+
+assert(result.text === "Namaste!", "Only public text returned");
+
+let emptyRejected = false;
+      try {
+        extractGeminiResponse({ candidates: [] });
+      } catch {
+        emptyRejected = true;
+      }
+      assert(emptyRejected, "Empty API response handled");
+
+let blockedRejected = false;
+      try {
+        extractGeminiResponse({
+          promptFeedback: { blockReason: "SAFETY" }
+        });
+      } catch {
+        blockedRejected = true;
+      }
+      assert(blockedRejected, "Blocked API response handled");
+
+assert(isValidModel("example-model-1"), "Valid model ID");
+      assert(!isValidModel("../secret"), "Invalid model path rejected");
+
+const summary = passed + " regression checks passed.";
+      console.info(summary);
+      return summary;
+    }
+  </script>
+</body>
+</html>
